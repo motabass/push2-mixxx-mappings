@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<MixxxControllerPreset mixxxVersion="" schemaVersion="1">
+<MixxxControllerPreset schemaVersion="1" mixxxVersion="">
     <info>
         <name>Push 2</name>
     </info>
     <controller id="Ableton">
         <scriptfiles>
-            <file filename="Push2.midi-script.js" functionprefix="Push2"/>
+            <file functionprefix="PUSH2" filename="Push2.midi-script.js"/>
         </scriptfiles>
         <controls>
             <control>
@@ -70,7 +70,7 @@
             </control>
             <control>
                 <group>[Channel2]</group>
-                <key>vinylcontrol_mode</key>
+                <key>vinylcontrol_enabled</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0x90</status>
                 <midino>0x29</midino>
@@ -90,7 +90,7 @@
             </control>
             <control>
                 <group>[Channel2]</group>
-                <key>vinylcontrol_enabled</key>
+                <key>vinylcontrol_mode</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0x90</status>
                 <midino>0x2B</midino>
@@ -269,11 +269,21 @@
                 </options>
             </control>
             <control>
+                <group>[Channel1]</group>
+                <key>pfl</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x4C</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
                 <group>[EqualizerRack1_[Channel2]_Effect1]</group>
                 <key>parameter3</key>
                 <description>MIDI Learned from 260 messages.</description>
                 <status>0xB0</status>
-                <midino>0x4C</midino>
+                <midino>0x4E</midino>
                 <options>
                     <diff/>
                 </options>
@@ -303,7 +313,7 @@
                 <key>parameter1</key>
                 <description>MIDI Learned from 273 messages.</description>
                 <status>0xB0</status>
-                <midino>0x4E</midino>
+                <midino>0x4C</midino>
                 <options>
                     <diff/>
                 </options>
@@ -349,6 +359,16 @@
                 </options>
             </control>
             <control>
+                <group>[Channel2]</group>
+                <key>pfl</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x53</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
                 <group>[Recording]</group>
                 <key>toggle_recording</key>
                 <description>MIDI Learned from 2 messages.</description>
@@ -360,12 +380,13 @@
             </control>
             <control>
                 <group>[Channel1]</group>
-                <key>play</key>
+                <key>PUSH2.play</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0x90</status>
                 <midino>0x5C</midino>
                 <options>
                     <normal/>
+                    <script-binding/>
                 </options>
             </control>
             <control>
@@ -380,7 +401,7 @@
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel1]_Effect1]</group>
-                <key>Push2.button_parameter1</key>
+                <key>PUSH2.button_parameter1</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
                 <midino>0x66</midino>
@@ -390,7 +411,7 @@
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel1]_Effect1]</group>
-                <key>Push2.button_parameter2</key>
+                <key>PUSH2.button_parameter2</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
                 <midino>0x67</midino>
@@ -400,7 +421,7 @@
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel1]_Effect1]</group>
-                <key>Push2.button_parameter3</key>
+                <key>PUSH2.button_parameter3</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
                 <midino>0x68</midino>
@@ -410,17 +431,17 @@
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel2]_Effect1]</group>
-                <key>Push2.button_parameter3</key>
+                <key>PUSH2.button_parameter3</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
-                <midino>0x6B</midino>
+                <midino>0x6D</midino>
                 <options>
                     <script-binding/>
                 </options>
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel2]_Effect1]</group>
-                <key>Push2.button_parameter2</key>
+                <key>PUSH2.button_parameter2</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
                 <midino>0x6C</midino>
@@ -430,10 +451,10 @@
             </control>
             <control>
                 <group>[EqualizerRack1_[Channel2]_Effect1]</group>
-                <key>Push2.button_parameter1</key>
+                <key>PUSH2.button_parameter1</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0xB0</status>
-                <midino>0x6D</midino>
+                <midino>0x6B</midino>
                 <options>
                     <script-binding/>
                 </options>

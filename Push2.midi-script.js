@@ -1,128 +1,203 @@
-var Push2 = {};
+var PUSH2 = new Controller();
 
-Push2.init = function (id, debugging) {
-    var touchStripeOptions = [0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01, 0x17, 0x55, 0xF7];
-    midi.sendSysexMsg(touchStripeOptions, touchStripeOptions.length);
+PUSH2.ANIMATIONS = {
+    button: {
+        static: 176,
+        pulse: 186,
+        fadein: 180,
+        fadein_slow: 181,
+        blinking: 185
+    },
+    pad: {
+        static: 144,
+        breathing: 138
+    }
+}
+
+PUSH2.COLORS = {gray: 123, white: 120, red: 127, green: 10, blue: 125};
+
+// TODO: full layout
+PUSH2.TOUCH_STRIPE = 0x01;
+PUSH2.BUTTONS = {browse: 0x6f, clip: 0x71, left: 0x2c, right: 0x2d, up: 0x2e, down: 0x2f, record: 0x56};
+PUSH2.DISPLAY_BUTTONS = {
+    button1: 0x66,
+    button2: 0x67,
+    button3: 0x68,
+    button4: 0x69,
+    button5: 0x6a,
+    button6: 0x6b,
+    button7: 0x6c,
+    button8: 0x6d
+};
+PUSH2.PADS = {
+    pad1: 0x24,
+    pad2: 0x25,
+    pad3: 0x26,
+    pad4: 0x27,
+    pad5: 0x28,
+    pad6: 0x29,
+    pad7: 0x2a,
+    pad8: 0x2b,
+    pad57: 0x5c,
+    pad64: 0x63
+};
 
 
+PUSH2.turnOnStaticLights = function () {
+    // Navigation Section
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.browse, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.clip, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.up, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.down, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.left, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.right, 127);
+
+    // Vinyl-Control Section
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad1, 8);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad2, 8);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad3, 8);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad6, 8);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad7, 8);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad8, 8);
+
+    // Play Section
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad57, 10);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad64, 10);
+
+// Effects
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 62, PUSH2.COLORS.white);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 63, PUSH2.COLORS.white);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 64, PUSH2.COLORS.white);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 65, PUSH2.COLORS.white);
+
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 70, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 71, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 72, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 73, PUSH2.COLORS.gray);
+
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 78, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 79, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 80, PUSH2.COLORS.gray);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 81, PUSH2.COLORS.gray);
+
+    // Record
+    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.record, 127);
+}
+
+PUSH2.init = function (id, debugging) {
+    // Touch-Stripe Konfiguration
+    var optionsByte = 0x55;
+    var touchStripeOptionsMsg = [0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01, 0x17, optionsByte, 0xF7];
+    midi.sendSysexMsg(touchStripeOptionsMsg, touchStripeOptionsMsg.length);
+
+    // LED Helligkeit
     var brightness = 127;
-    var ledBrightness = [0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01, 0x06, brightness, 0xF7];
-    midi.sendSysexMsg(ledBrightness, ledBrightness.length);
+    var ledBrightnessMsg = [0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01, 0x06, brightness, 0xF7];
+    midi.sendSysexMsg(ledBrightnessMsg, ledBrightnessMsg.length);
+
+    PUSH2.turnOnStaticLights()
+
+    engine.makeConnection('[Master]', 'crossfader', function (value, group, control) {
+        PUSH2.setTouchstripeLeds(value)
+    }).trigger();
 
 
-    midi.sendShortMsg(0xB0, 111, 127);
-    midi.sendShortMsg(0xB0, 113, 127);
-    midi.sendShortMsg(0xB0, 44, 127);
-    midi.sendShortMsg(0xB0, 45, 127);
-    midi.sendShortMsg(0xB0, 46, 127);
-    midi.sendShortMsg(0xB0, 47, 127);
-
-    midi.sendShortMsg(0x90, 36, 125);
-    midi.sendShortMsg(0x90, 37, 125);
-    midi.sendShortMsg(0x90, 38, 125);
-    midi.sendShortMsg(0x90, 41, 125);
-    midi.sendShortMsg(0x90, 42, 125);
-    midi.sendShortMsg(0x90, 43, 125);
-
-    midi.sendShortMsg(0x90, 92, 126);
-    midi.sendShortMsg(0x90, 99, 126);
-
-    midi.sendShortMsg(0x90, 62, 122);
-    midi.sendShortMsg(0x90, 63, 122);
-    midi.sendShortMsg(0x90, 64, 122);
-    midi.sendShortMsg(0x90, 65, 122);
-
-    midi.sendShortMsg(0x90, 70, 123);
-    midi.sendShortMsg(0x90, 71, 123);
-    midi.sendShortMsg(0x90, 72, 123);
-    midi.sendShortMsg(0x90, 73, 123);
-
-    midi.sendShortMsg(0x90, 78, 123);
-    midi.sendShortMsg(0x90, 79, 123);
-    midi.sendShortMsg(0x90, 80, 123);
-    midi.sendShortMsg(0x90, 81, 123);
-
-
-    var onCrossfaderCallback = function (value, group, control) {
-        Push2.setCrossfaderLeds(value)
-    };
-    engine.makeConnection('[Master]', 'crossfader', onCrossfaderCallback).trigger();
-
-
-    var createToggleCallback = function (address) {
-        return function (value, group, control) {
-            Push2.setToggleLed(value, group, control, address)
+    var createKillToggleCallback = function (control) {
+        return function (value, group, controlName) {
+            PUSH2.setToggleButtonLedState(value, group, controlName, control, PUSH2.COLORS.green, PUSH2.COLORS.red, PUSH2.ANIMATIONS.button.blinking)
         }
     }
 
     var groupLeft = '[EqualizerRack1_[Channel1]_Effect1]';
-    engine.makeConnection(groupLeft, 'button_parameter1', createToggleCallback(102)).trigger();
-    engine.makeConnection(groupLeft, 'button_parameter2', createToggleCallback(103)).trigger();
-    engine.makeConnection(groupLeft, 'button_parameter3', createToggleCallback(104)).trigger();
+    engine.makeConnection(groupLeft, 'button_parameter1', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button1)).trigger();
+    engine.makeConnection(groupLeft, 'button_parameter2', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button2)).trigger();
+    engine.makeConnection(groupLeft, 'button_parameter3', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button3)).trigger();
 
     var groupRight = '[EqualizerRack1_[Channel2]_Effect1]';
-    engine.makeConnection(groupRight, 'button_parameter1', createToggleCallback(109)).trigger();
-    engine.makeConnection(groupRight, 'button_parameter2', createToggleCallback(108)).trigger();
-    engine.makeConnection(groupRight, 'button_parameter3', createToggleCallback(107)).trigger();
+    engine.makeConnection(groupRight, 'button_parameter1', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button6)).trigger();
+    engine.makeConnection(groupRight, 'button_parameter2', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button7)).trigger();
+    engine.makeConnection(groupRight, 'button_parameter3', createKillToggleCallback(PUSH2.DISPLAY_BUTTONS.button8)).trigger();
+
+
+    engine.makeConnection('[Channel1]', 'play', function (value, group, controlName) {
+        PUSH2.setTogglePadLedState(value, group, controlName, PUSH2.PADS.pad57, PUSH2.COLORS.green, PUSH2.COLORS.red, PUSH2.ANIMATIONS.pad.breathing)
+    }).trigger();
+
+    engine.makeConnection('[Channel2]', 'play', function (value, group, controlName) {
+        PUSH2.setTogglePadLedState(value, group, controlName, PUSH2.PADS.pad64, PUSH2.COLORS.green, PUSH2.COLORS.red, PUSH2.ANIMATIONS.pad.breathing)
+    }).trigger();
 
 
     // turn on all note LEDs
     // for (var i = 1; i <= 64; i++) {
-    //     midi.sendShortMsg(0x90, i + 35, 124);
+    //     midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, i + 35, 124);
     // }
 }
 
-Push2.shutdown = function () {
+PUSH2.shutdown = function () {
     // turn off all LEDs
     for (var i = 1; i <= 64; i++) {
-        midi.sendShortMsg(0x90, i + 35, 0);
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, i + 35, 0);
     }
 }
 
-
-Push2.button_parameter1 = function (channel, control, value, status, group) {
-    Push2.toggleButton('button_parameter1', channel, control, value, status, group)
-}
-Push2.button_parameter2 = function (channel, control, value, status, group) {
-    Push2.toggleButton('button_parameter2', channel, control, value, status, group)
-}
-Push2.button_parameter3 = function (channel, control, value, status, group) {
-    Push2.toggleButton('button_parameter3', channel, control, value, status, group)
+// CALLBACKS
+PUSH2.play = function (channel, control, value, status, group) {
+    PUSH2.toggleMixxButton('play', channel, control, value, status, group)
 }
 
-Push2.toggleButton = function (buttonName, channel, control, value, status, group) {
+PUSH2.button_parameter1 = function (channel, control, value, status, group) {
+    PUSH2.toggleMixxButton('button_parameter1', channel, control, value, status, group)
+}
+PUSH2.button_parameter2 = function (channel, control, value, status, group) {
+    PUSH2.toggleMixxButton('button_parameter2', channel, control, value, status, group)
+}
+PUSH2.button_parameter3 = function (channel, control, value, status, group) {
+    PUSH2.toggleMixxButton('button_parameter3', channel, control, value, status, group)
+}
+// CALLBACKS END
+
+PUSH2.toggleMixxButton = function (controlName, channel, control, value, status, group) {
     if (value) {
-        var toggleState = engine.getParameter(group, buttonName)
+        var toggleState = engine.getParameter(group, controlName)
         if (toggleState) {
-            engine.setValue(group, buttonName, 0);
-            midi.sendShortMsg(0xB0, control, 124);
+            engine.setValue(group, controlName, 0);
         } else {
-            engine.setValue(group, buttonName, 1);
-            // midi.sendShortMsg(0xB0, control, 127)
-            midi.sendShortMsg(182, control, 127)        }
+            engine.setValue(group, controlName, 1);
+        }
     }
 }
 
-Push2.setCrossfaderLeds = function (value) {
+
+PUSH2.setToggleButtonLedState = function (value, group, controlName, control, color, toggledColor, toggleAnimationChannel) {
+    if (value) {
+        midi.sendShortMsg(toggleAnimationChannel || PUSH2.ANIMATIONS.button.static, control, toggledColor || PUSH2.COLORS.white)
+    } else {
+        midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, control, color || PUSH2.COLORS.gray)
+    }
+}
+
+
+PUSH2.setTogglePadLedState = function (value, group, controlName, control, color, toggledColor, toggleAnimationChannel) {
+    if (value) {
+        midi.sendShortMsg(toggleAnimationChannel || PUSH2.ANIMATIONS.pad.static, control, toggledColor || PUSH2.COLORS.white)
+    } else {
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, control, color || PUSH2.COLORS.gray)
+    }
+}
+
+
+PUSH2.setTouchstripeLeds = function (value) {
     if (value >= 1) {
-        midi.sendShortMsg(0xB0, 0x01, 127)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, 127)
     } else if (value >= 0) {
         // TODO: fix missing upper led
-        midi.sendShortMsg(0xB0, 0x01, Math.ceil(64 + value  * 64))
+        midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, Math.ceil(64 + value * 64))
     } else if (value < -1) {
         // TODO: fix missing upper led
-        midi.sendShortMsg(0xB0, 0x01, 0)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, 0)
     } else {
-        midi.sendShortMsg(0xB0, 0x01, Math.floor(64 - value  * -64))
-    }
-}
-
-Push2.setToggleLed = function (value, group, control, address) {
-    if (value) {
-        // midi.sendShortMsg(0xB0, address, 127)
-        midi.sendShortMsg(184, address, 127)
-    } else {
-        midi.sendShortMsg(0xB0, address, 124)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, Math.floor(64 - value * -64))
     }
 }
 
