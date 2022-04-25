@@ -1,3 +1,6 @@
+// Push 2 documentation: https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc
+
+
 var PUSH2 = new Controller();
 
 PUSH2.ANIMATIONS = {
@@ -30,7 +33,7 @@ PUSH2.COLORS = {
 };
 
 PUSH2.TOUCH_STRIPE = 0x01;
-PUSH2.BUTTONS = {browse: 0x6f, clip: 0x71, left: 0x2c, right: 0x2d, up: 0x2e, down: 0x2f, record: 0x56};
+PUSH2.BUTTONS = {browse: 0x6f, clip: 0x71, left: 0x2c, right: 0x2d, up: 0x2e, down: 0x2f, record: 0x56, metronome: 0x9};
 PUSH2.DISPLAY_BUTTONS = {
     button1: 0x66,
     button2: 0x67,
@@ -204,9 +207,15 @@ PUSH2.init = function (id, debugging) {
     engine.makeConnection('[Channel1]', 'volume', function (value, group, controlName) {
         PUSH2.setPadsFaderLeds(value, group, controlName)
     }).trigger();
-
     engine.makeConnection('[Channel2]', 'volume', function (value, group, controlName) {
         PUSH2.setPadsFaderLeds(value, group, controlName)
+    }).trigger();
+
+    engine.makeConnection('[Channel1]', 'pfl', function (value, group, controlName) {
+        PUSH2.setTogglePadLedState(value, group, controlName, PUSH2.PADS.pad41, PUSH2.COLORS.gray, PUSH2.COLORS.blue)
+    }).trigger();
+    engine.makeConnection('[Channel2]', 'pfl', function (value, group, controlName) {
+        PUSH2.setTogglePadLedState(value, group, controlName, PUSH2.PADS.pad48, PUSH2.COLORS.gray, PUSH2.COLORS.blue)
     }).trigger();
 
 
@@ -223,23 +232,26 @@ PUSH2.shutdown = function () {
 // CALLBACKS
 PUSH2.volume = function (channel, control, value, status, group) {
     if (control === PUSH2.PADS.pad4 || control === PUSH2.PADS.pad5) {
-        engine.setParameter(group, 'volume', 0)
+        engine.setValue(group, 'volume', 0)
     } else if (control === PUSH2.PADS.pad12 || control === PUSH2.PADS.pad13) {
-        engine.setParameter(group, 'volume', 0.125)
+        engine.setValue(group, 'volume', 0.14)
     } else if (control === PUSH2.PADS.pad20 || control === PUSH2.PADS.pad21) {
-        engine.setParameter(group, 'volume', 0.25)
+        engine.setValue(group, 'volume', 0.28)
     } else if (control === PUSH2.PADS.pad28 || control === PUSH2.PADS.pad29) {
-        engine.setParameter(group, 'volume', 0.375)
+        engine.setValue(group, 'volume', 0.42)
     } else if (control === PUSH2.PADS.pad36 || control === PUSH2.PADS.pad37) {
-        engine.setParameter(group, 'volume', 0.5)
+        engine.setValue(group, 'volume', 0.56)
     } else if (control === PUSH2.PADS.pad44 || control === PUSH2.PADS.pad45) {
-        engine.setParameter(group, 'volume', 0.625)
+        engine.setValue(group, 'volume', 0.70)
     } else if (control === PUSH2.PADS.pad52 || control === PUSH2.PADS.pad53) {
-        engine.setParameter(group, 'volume', 0.75)
+        engine.setValue(group, 'volume', 0.84)
     } else if (control === PUSH2.PADS.pad60 || control === PUSH2.PADS.pad61) {
-        engine.setParameter(group, 'volume', 1)
+        engine.setValue(group, 'volume', 1)
     }
 }
+
+// TODO: use metronome for switching between effect knobs
+// TODO: shift button!!!!
 // CALLBACKS END
 
 
@@ -258,16 +270,7 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.black)
-    } else if (value > 0 && value <= 0.125) {
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad36 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad28 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.black)
-        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.124 && value <= 0.25) {
+    } else if (value > 0 && value <= 0.14) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.black)
@@ -276,7 +279,7 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.25 && value <= 0.375) {
+    } else if (value > 0.14 && value <= 0.28) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.black)
@@ -285,7 +288,7 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.375 && value <= 0.5) {
+    } else if (value > 0.28 && value <= 0.42) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.black)
@@ -294,7 +297,7 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.5 && value <= 0.625) {
+    } else if (value > 0.42 && value <= 0.56) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.black)
@@ -303,7 +306,7 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.625 && value <= 0.75) {
+    } else if (value > 0.56 && value <= 0.70) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.black)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.white)
@@ -312,8 +315,17 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
-    } else if (value > 0.75 && value < 1) {
+    } else if (value > 0.70 && value <= 0.84) {
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.black)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad36 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad28 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12 + channelOffset, PUSH2.COLORS.white)
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4 + channelOffset, PUSH2.COLORS.white)
+    } else if (value > 0.84 && value < 1) {
+        midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44 + channelOffset, PUSH2.COLORS.white)
         midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad36 + channelOffset, PUSH2.COLORS.white)
