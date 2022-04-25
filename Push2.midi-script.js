@@ -1,5 +1,5 @@
 // Push 2 documentation: https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc
-// noinspection JSUnresolvedFunction,JSUnresolvedVariable
+// noinspection JSUnresolvedFunction,JSUnresolvedVariable,SpellCheckingInspection
 
 var PUSH2 = new Controller();
 
