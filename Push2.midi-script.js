@@ -120,6 +120,8 @@ PUSH2.PADS = {
   pad64: 0x63
 };
 
+PUSH2.selectedEffectKnob = 1;
+
 PUSH2.turnOnStaticLights = function () {
   // Navigation Section
   midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.browse, 127);

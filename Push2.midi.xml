@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<MixxxControllerPreset schemaVersion="1" mixxxVersion="">
+<MixxxControllerPreset mixxxVersion="" schemaVersion="1">
     <info>
         <name>Push 2</name>
     </info>
@@ -26,6 +26,16 @@
                 <midino>0x0E</midino>
                 <options>
                     <selectknob/>
+                </options>
+            </control>
+            <control>
+                <group>[EffectRack1_EffectUnit1_Effect1]</group>
+                <key>meta</key>
+                <description>MIDI Learned from 421 messages.</description>
+                <status>0xB0</status>
+                <midino>0x0F</midino>
+                <options>
+                    <hercjog/>
                 </options>
             </control>
             <control>
@@ -74,146 +84,6 @@
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0x90</status>
                 <midino>0x28</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x2F</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x30</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x37</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x38</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x3F</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x40</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x47</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x48</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x4F</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x50</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x57</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x58</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel1]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x5F</midino>
-                <options>
-                    <script-binding/>
-                </options>
-            </control>
-            <control>
-                <group>[Channel2]</group>
-                <key>PUSH2.volume</key>
-                <description>MIDI Learned from 2 messages.</description>
-                <status>0x90</status>
-                <midino>0x60</midino>
                 <options>
                     <script-binding/>
                 </options>
@@ -279,6 +149,16 @@
                 </options>
             </control>
             <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x2F</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
                 <group>[Library]</group>
                 <key>MoveDown</key>
                 <description>MIDI Learned from 2 messages.</description>
@@ -289,6 +169,36 @@
                 </options>
             </control>
             <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x30</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x37</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x38</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
                 <group>[EffectRack1_EffectUnit1_Effect1]</group>
                 <key>enabled</key>
                 <description>MIDI Learned from 2 messages.</description>
@@ -296,6 +206,26 @@
                 <midino>0x3E</midino>
                 <options>
                     <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x3F</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x40</midino>
+                <options>
+                    <script-binding/>
                 </options>
             </control>
             <control>
@@ -319,6 +249,16 @@
                 </options>
             </control>
             <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x47</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
                 <group>[EqualizerRack1_[Channel1]_Effect1]</group>
                 <key>parameter1</key>
                 <description>MIDI Learned from 3019 messages.</description>
@@ -326,6 +266,16 @@
                 <midino>0x47</midino>
                 <options>
                     <hercjog/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x48</midino>
+                <options>
+                    <script-binding/>
                 </options>
             </control>
             <control>
@@ -391,7 +341,7 @@
             <control>
                 <group>[EqualizerRack1_[Channel2]_Effect1]</group>
                 <key>parameter1</key>
-                <description>MIDI Learned from 273 messages.</description>
+                <description>should be changebale</description>
                 <status>0xB0</status>
                 <midino>0x4C</midino>
                 <options>
@@ -429,6 +379,16 @@
                 </options>
             </control>
             <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x4F</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
                 <group>[Master]</group>
                 <key>gain</key>
                 <description>MIDI Learned from 895 messages.</description>
@@ -436,6 +396,16 @@
                 <midino>0x4F</midino>
                 <options>
                     <hercjog/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x50</midino>
+                <options>
+                    <script-binding/>
                 </options>
             </control>
             <control>
@@ -470,12 +440,52 @@
             </control>
             <control>
                 <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x57</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x58</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
                 <key>play</key>
                 <description>MIDI Learned from 2 messages.</description>
                 <status>0x90</status>
                 <midino>0x5C</midino>
                 <options>
                     <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel1]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x5F</midino>
+                <options>
+                    <script-binding/>
+                </options>
+            </control>
+            <control>
+                <group>[Channel2]</group>
+                <key>PUSH2.volume</key>
+                <description>MIDI Learned from 2 messages.</description>
+                <status>0x90</status>
+                <midino>0x60</midino>
+                <options>
+                    <script-binding/>
                 </options>
             </control>
             <control>
