@@ -3,7 +3,12 @@
 
 var PUSH2 = new Controller();
 
+// CONSTANTS
 PUSH2.ANIMATIONS = {
+  stripe: {
+    pitchbend: 224,
+    modwheel: 176
+  },
   button: {
     static: 176,
     pulse: 186,
@@ -41,7 +46,13 @@ PUSH2.BUTTONS = {
   up: 0x2e,
   down: 0x2f,
   record: 0x56,
-  metronome: 0x9
+  metronome: 0x9,
+  tapTempo: 0x3,
+  octaveUp: 0x37,
+  octaveDown: 0x36,
+  pageLeft: 0x3e,
+  pageRight: 0x3f,
+  shift: 0x31
 };
 PUSH2.DISPLAY_BUTTONS = {
   button1: 0x66,
@@ -119,41 +130,25 @@ PUSH2.PADS = {
   pad63: 0x62,
   pad64: 0x63
 };
+// CONSTANTS END
 
-PUSH2.selectedEffectKnob = 1;
+// STATE
+PUSH2.selectedEffectUnit = 1;
+PUSH2.selectedEffectParameter = 4;
+PUSH2.currentBrightness = 127;
+PUSH2.shiftActive = false;
 
-PUSH2.turnOnStaticLights = function () {
-  // Navigation Section
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.browse, 127);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.clip, 127);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.up, 127);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.down, 127);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.left, 127);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.right, 127);
-
-  // Effects
-  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 70, PUSH2.COLORS.gray);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 0x49, PUSH2.COLORS.gray);
-
-  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 78, PUSH2.COLORS.gray);
-  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 0x51, PUSH2.COLORS.gray);
-
-  // Record
-  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.record, 127);
-};
+// STATE END
 
 PUSH2.init = function (id, debugging) {
+  PUSH2.clearPads();
+  PUSH2.setBrightness(PUSH2.currentBrightness);
+  PUSH2.turnOnStaticLights();
+
   // Touch-Stripe Konfiguration
-  var optionsByte = 0x55;
+  var optionsByte = 0x51;
   var touchStripeOptionsMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x17, optionsByte, 0xf7];
   midi.sendSysexMsg(touchStripeOptionsMsg, touchStripeOptionsMsg.length);
-
-  // LED Helligkeit
-  var brightness = 127;
-  var ledBrightnessMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x06, brightness, 0xf7];
-  midi.sendSysexMsg(ledBrightnessMsg, ledBrightnessMsg.length);
-
-  PUSH2.turnOnStaticLights();
 
   engine
     .makeConnection('[Master]', 'crossfader', function (value, group, control) {
@@ -255,14 +250,24 @@ PUSH2.init = function (id, debugging) {
 };
 
 PUSH2.shutdown = function () {
-  // turn off all LEDs
-  for (var i = 1; i <= 64; i++) {
-    midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, i + 35, 0);
-  }
+  PUSH2.clearButtons();
+  PUSH2.clearDisplayButtons();
+  PUSH2.clearPads();
+  PUSH2.resetTouchstripe();
+  PUSH2.drawSpaceInvader();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader2();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader2();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader();
+  PUSH2.setBrightness(20);
 };
 
 // CALLBACKS
-PUSH2.volume = function (channel, control, value, status, group) {
+PUSH2.lineVolume = function (channel, control, value, status, group) {
   if (control === PUSH2.PADS.pad4 || control === PUSH2.PADS.pad5) {
     engine.setValue(group, 'volume', 0);
   } else if (control === PUSH2.PADS.pad12 || control === PUSH2.PADS.pad13) {
@@ -282,9 +287,87 @@ PUSH2.volume = function (channel, control, value, status, group) {
   }
 };
 
-// TODO: use metronome for switching between effect knobs
-// TODO: shift button!!!!
+PUSH2.changeSelectedEffectUnit = function (channel, control, value, status, group) {
+  if (value === 127) {
+    if (PUSH2.selectedEffectUnit < 2) {
+      PUSH2.selectedEffectUnit += 1;
+    } else {
+      PUSH2.selectedEffectUnit = 1;
+    }
+  }
+  PUSH2.EffectEncoder.group = '[EffectRack1_EffectUnit' + PUSH2.selectedEffectUnit + '_Effect1]';
+};
+
+PUSH2.changeSelectedEffectParameter = function (channel, control, value, status, group) {
+  if (value === 127) {
+    if (PUSH2.selectedEffectParameter <= 4) {
+      PUSH2.selectedEffectParameter += 1;
+    } else {
+      PUSH2.selectedEffectParameter = 1;
+    }
+  }
+  if (PUSH2.selectedEffectParameter < 4) {
+    PUSH2.EffectEncoder.inKey = 'parameter' + PUSH2.selectedEffectParameter;
+  } else {
+    PUSH2.EffectEncoder.inKey = 'meta';
+  }
+};
+
+PUSH2.increaseBrightness = function (channel, control, value, status, group) {
+  var increase = PUSH2.shiftActive ? 30 : 10;
+  var newBrightness = PUSH2.currentBrightness + increase;
+  if (newBrightness > 127) {
+    newBrightness = 127;
+  }
+  PUSH2.currentBrightness = newBrightness;
+
+  PUSH2.setBrightness(PUSH2.currentBrightness);
+};
+
+PUSH2.decreaseBrightness = function (channel, control, value, status, group) {
+  var decrease = PUSH2.shiftActive ? 30 : 10;
+  var newBrightness = PUSH2.currentBrightness - decrease;
+  if (newBrightness < 0) {
+    newBrightness = 0;
+  }
+  PUSH2.currentBrightness = newBrightness;
+
+  PUSH2.setBrightness(PUSH2.currentBrightness);
+};
+
+PUSH2.shift = function (channel, control, value, status, group) {
+  if (value === 127) {
+    PUSH2.shiftActive = true;
+    PUSH2.VolumeEncoder.inKey = 'headGain';
+  }
+  if (value === 0) {
+    PUSH2.shiftActive = false;
+    PUSH2.VolumeEncoder.inKey = 'gain';
+  }
+};
+
 // CALLBACKS END
+
+// COMPONENTS
+PUSH2.EffectEncoder = new components.Encoder({
+  midi: [0xb0, 0x0f],
+  group: '[EffectRack1_EffectUnit1_Effect1]',
+  inKey: 'meta',
+  input: function (channel, control, value, status, group) {
+    PUSH2.handleEncoderInput(this, channel, control, value, status, group);
+  }
+});
+
+PUSH2.VolumeEncoder = new components.Encoder({
+  midi: [0xb0, 0x4f],
+  group: '[Master]',
+  inKey: 'gain',
+  input: function (channel, control, value, status, group) {
+    PUSH2.handleEncoderInput(this, channel, control, value, status, group);
+  }
+});
+
+// COMPONENTS END
 
 PUSH2.setPadsFaderLeds = function (value, group, controlName) {
   var channelOffset = 0;
@@ -376,17 +459,6 @@ PUSH2.setPadsFaderLeds = function (value, group, controlName) {
   }
 };
 
-PUSH2.toggleMixxButton = function (controlName, channel, control, value, status, group) {
-  if (value) {
-    var toggleState = engine.getParameter(group, controlName);
-    if (toggleState) {
-      engine.setValue(group, controlName, 0);
-    } else {
-      engine.setValue(group, controlName, 1);
-    }
-  }
-};
-
 PUSH2.setToggleButtonLedState = function (value, group, controlName, control, color, toggledColor, toggleAnimationChannel) {
   if (value) {
     midi.sendShortMsg(toggleAnimationChannel || PUSH2.ANIMATIONS.button.static, control, toggledColor || PUSH2.COLORS.white);
@@ -407,14 +479,245 @@ PUSH2.setTogglePadLedState = function (value, group, controlName, control, color
 
 PUSH2.setTouchstripeLeds = function (value) {
   if (value >= 1) {
-    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, 127);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.stripe.pitchbend, PUSH2.TOUCH_STRIPE, 127);
   } else if (value >= 0) {
     // TODO: fix missing upper led
-    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, Math.ceil(64 + value * 64));
+    midi.sendShortMsg(PUSH2.ANIMATIONS.stripe.pitchbend, PUSH2.TOUCH_STRIPE, Math.ceil(64 + value * 64));
   } else if (value < -1) {
     // TODO: fix missing upper led
-    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, 0);
+    midi.sendShortMsg(PUSH2.ANIMATIONS.stripe.pitchbend, PUSH2.TOUCH_STRIPE, 0);
   } else {
-    midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.TOUCH_STRIPE, Math.floor(64 - value * -64));
+    midi.sendShortMsg(PUSH2.ANIMATIONS.stripe.pitchbend, PUSH2.TOUCH_STRIPE, Math.floor(64 - value * -64));
+  }
+};
+
+PUSH2.clearPads = function () {
+  for (var key in PUSH2.PADS) {
+    if (PUSH2.PADS.hasOwnProperty(key)) {
+      midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS[key], 0);
+    }
+  }
+};
+
+PUSH2.clearButtons = function () {
+  for (var key in PUSH2.BUTTONS) {
+    if (PUSH2.BUTTONS.hasOwnProperty(key)) {
+      midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS[key], 0);
+    }
+  }
+};
+
+PUSH2.clearDisplayButtons = function () {
+  for (var key in PUSH2.DISPLAY_BUTTONS) {
+    if (PUSH2.DISPLAY_BUTTONS.hasOwnProperty(key)) {
+      midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.DISPLAY_BUTTONS[key], 0);
+    }
+  }
+};
+
+PUSH2.resetTouchstripe = function () {
+  midi.sendShortMsg(PUSH2.ANIMATIONS.stripe.pitchbend, PUSH2.TOUCH_STRIPE, 64);
+};
+
+PUSH2.turnOnStaticLights = function () {
+  // Navigation Section
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.browse, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.clip, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.up, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.down, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.left, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.right, 127);
+
+  // Effects
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 70, PUSH2.COLORS.gray);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 0x49, PUSH2.COLORS.gray);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 78, PUSH2.COLORS.gray);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, 0x51, PUSH2.COLORS.gray);
+
+  // Effect-Knob-Selector
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.metronome, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.tapTempo, 127);
+
+  // Brightness-Selector
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.octaveUp, 127);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.octaveDown, 127);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.shift, 127);
+
+  // Record
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.record, 127);
+};
+
+PUSH2.setBrightness = function (brightness) {
+  var ledBrightnessMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x06, brightness, 0xf7];
+  midi.sendSysexMsg(ledBrightnessMsg, ledBrightnessMsg.length);
+
+  // var displayBrightnessMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x08, 0x7f, 0x01, 0xf7];
+  // midi.sendSysexMsg(displayBrightnessMsg, displayBrightnessMsg.length);
+};
+
+// HELPERS
+PUSH2.handleEncoderInput = function (self, channel, control, value, status, group) {
+  if (value === 1) {
+    self.inSetParameter(self.inGetParameter() + 0.005);
+  } else if (value === 127) {
+    self.inSetParameter(self.inGetParameter() - 0.005);
+  }
+};
+
+PUSH2.drawSpaceInvader = function () {
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad1, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad2, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad3, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad5, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad6, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad7, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad8, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad9, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad10, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad11, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad13, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad14, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad15, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad16, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad17, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad18, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad19, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad21, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad22, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad23, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad24, PUSH2.COLORS.yellow);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad25, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad26, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad27, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad28, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad29, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad30, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad31, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad32, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad33, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad34, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad35, PUSH2.COLORS.darkgreen);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad36, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad37, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad38, PUSH2.COLORS.darkgreen);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad39, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad40, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad41, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad42, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad43, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad45, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad46, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad47, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad48, PUSH2.COLORS.yellow);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad49, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad50, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad51, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad53, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad54, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad55, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad56, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad57, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad58, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad59, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad61, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad62, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad63, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad64, PUSH2.COLORS.yellow);
+};
+
+PUSH2.drawSpaceInvader2 = function () {
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad1, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad2, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad3, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad4, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad5, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad6, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad7, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad8, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad9, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad10, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad11, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad12, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad13, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad14, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad15, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad16, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad17, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad18, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad19, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad20, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad21, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad22, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad23, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad24, PUSH2.COLORS.yellow);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad25, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad26, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad27, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad28, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad29, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad30, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad31, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad32, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad33, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad34, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad35, PUSH2.COLORS.darkgreen);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad36, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad37, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad38, PUSH2.COLORS.darkgreen);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad39, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad40, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad41, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad42, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad43, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad44, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad45, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad46, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad47, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad48, PUSH2.COLORS.yellow);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad49, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad50, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad51, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad52, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad53, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad54, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad55, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad56, 0);
+
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad57, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad58, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad59, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad60, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad61, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad62, PUSH2.COLORS.yellow);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad63, 0);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad64, PUSH2.COLORS.yellow);
+};
+
+PUSH2.wait = function (ms) {
+  var start = Date.now();
+  var now = start;
+  while (now - start < ms) {
+    now = Date.now();
   }
 };
