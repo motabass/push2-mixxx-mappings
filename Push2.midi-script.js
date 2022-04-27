@@ -62,7 +62,15 @@ PUSH2.DISPLAY_BUTTONS = {
   button5: 0x6a,
   button6: 0x6b,
   button7: 0x6c,
-  button8: 0x6d
+  button8: 0x6d,
+  button9: 20,
+  button10: 21,
+  button11: 22,
+  button12: 23,
+  button13: 24,
+  button14: 25,
+  button15: 26,
+  button16: 27
 };
 PUSH2.PADS = {
   pad1: 0x24,
@@ -130,6 +138,13 @@ PUSH2.PADS = {
   pad63: 0x62,
   pad64: 0x63
 };
+
+PUSH2.SYSEX_COMMANDS = {
+  setTouchStripe: 0x17,
+  setMidiMode: 0x0a,
+  setPadSensitivity: 0x28,
+  setLedBrightness: 0x06
+};
 // CONSTANTS END
 
 // STATE
@@ -141,14 +156,24 @@ PUSH2.shiftActive = false;
 // STATE END
 
 PUSH2.init = function (id, debugging) {
-  PUSH2.clearPads();
-  PUSH2.setBrightness(PUSH2.currentBrightness);
-  PUSH2.turnOnStaticLights();
+  // Set midi mode to dual
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setMidiMode, [2]);
 
   // Touch-Stripe Konfiguration
   var optionsByte = 0x51;
-  var touchStripeOptionsMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x17, optionsByte, 0xf7];
-  midi.sendSysexMsg(touchStripeOptionsMsg, touchStripeOptionsMsg.length);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setTouchStripe, [optionsByte]);
+
+  // lower sensitivity for vinyl section
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 1, 1]);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 2, 1]);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 3, 2]);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 6, 1]);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 7, 1]);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setPadSensitivity, [8, 8, 2]);
+
+  PUSH2.clearPads();
+  PUSH2.setBrightness(PUSH2.currentBrightness);
+  PUSH2.turnOnStaticLights();
 
   engine
     .makeConnection('[Master]', 'crossfader', function (value, group, control) {
@@ -254,15 +279,7 @@ PUSH2.shutdown = function () {
   PUSH2.clearDisplayButtons();
   PUSH2.clearPads();
   PUSH2.resetTouchstripe();
-  PUSH2.drawSpaceInvader();
-  PUSH2.wait(500);
-  PUSH2.drawSpaceInvader2();
-  PUSH2.wait(500);
-  PUSH2.drawSpaceInvader();
-  PUSH2.wait(500);
-  PUSH2.drawSpaceInvader2();
-  PUSH2.wait(500);
-  PUSH2.drawSpaceInvader();
+  PUSH2.animateSpaceInvader();
   PUSH2.setBrightness(20);
 };
 
@@ -491,6 +508,13 @@ PUSH2.setTouchstripeLeds = function (value) {
   }
 };
 
+PUSH2.sendSysex = function (command, bytesArray) {
+  var start = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, command];
+  var end = [0xf7];
+  var msg = start.concat(bytesArray).concat(end);
+  midi.sendSysexMsg(msg, msg.length);
+};
+
 PUSH2.clearPads = function () {
   for (var key in PUSH2.PADS) {
     if (PUSH2.PADS.hasOwnProperty(key)) {
@@ -547,23 +571,42 @@ PUSH2.turnOnStaticLights = function () {
 
   // Record
   midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.BUTTONS.record, 127);
+
+  // Display buttons
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.DISPLAY_BUTTONS.button11, PUSH2.COLORS.gray);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.DISPLAY_BUTTONS.button12, PUSH2.COLORS.gray);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.DISPLAY_BUTTONS.button13, PUSH2.COLORS.gray);
+  midi.sendShortMsg(PUSH2.ANIMATIONS.button.static, PUSH2.DISPLAY_BUTTONS.button14, PUSH2.COLORS.gray);
 };
 
 PUSH2.setBrightness = function (brightness) {
-  var ledBrightnessMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x06, brightness, 0xf7];
-  midi.sendSysexMsg(ledBrightnessMsg, ledBrightnessMsg.length);
+  PUSH2.sendSysex(PUSH2.SYSEX_COMMANDS.setLedBrightness, [brightness]);
 
   // var displayBrightnessMsg = [0xf0, 0x00, 0x21, 0x1d, 0x01, 0x01, 0x08, 0x7f, 0x01, 0xf7];
   // midi.sendSysexMsg(displayBrightnessMsg, displayBrightnessMsg.length);
 };
 
-// HELPERS
 PUSH2.handleEncoderInput = function (self, channel, control, value, status, group) {
+  var increment = PUSH2.shiftActive ? 0.001 : 0.005;
   if (value === 1) {
-    self.inSetParameter(self.inGetParameter() + 0.005);
+    self.inSetParameter(self.inGetParameter() + increment);
   } else if (value === 127) {
-    self.inSetParameter(self.inGetParameter() - 0.005);
+    self.inSetParameter(self.inGetParameter() - increment);
   }
+};
+
+// HELPERS
+
+PUSH2.animateSpaceInvader = function () {
+  PUSH2.drawSpaceInvader();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader_frame2();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader_frame2();
+  PUSH2.wait(500);
+  PUSH2.drawSpaceInvader();
 };
 
 PUSH2.drawSpaceInvader = function () {
@@ -640,7 +683,7 @@ PUSH2.drawSpaceInvader = function () {
   midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad64, PUSH2.COLORS.yellow);
 };
 
-PUSH2.drawSpaceInvader2 = function () {
+PUSH2.drawSpaceInvader_frame2 = function () {
   midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad1, 0);
   midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad2, 0);
   midi.sendShortMsg(PUSH2.ANIMATIONS.pad.static, PUSH2.PADS.pad3, 0);
